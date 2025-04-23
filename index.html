@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snakes and Ladders Game</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="score-display">
+        <div class="player1">Παίκτης 1 (Πράσινος): <span id="score1">0</span></div>
+        <div class="player2">Παίκτης 2 (Κόκκινος): <span id="score2">0</span></div>
+    </div>
+    <div class="game-container">
+        <h1>Snakes and Ladders</h1>
+        <div class="game-info">
+            <div id="playerTurn">Player 1's turn (Green)</div>
+            <div class="dice-container">
+                <div id="dice1" class="dice">⚀</div>
+                <div id="dice2" class="dice">⚀</div>
+            </div>
+            <div id="diceResult">Dice: 0</div>
+        </div>
+        <canvas id="gameBoard" width="1000" height="1000"></canvas>
+        <div class="controls">
+            <button id="rollButton">Roll Dice</button>
+            <button id="randomizeButton">Randomize Board</button>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
