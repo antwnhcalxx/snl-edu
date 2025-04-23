@@ -4,7 +4,7 @@ class SnakeAndLaddersGame {
         this.ctx = this.canvas.getContext('2d');
         this.cellSize = 100; // 1000px / 10 cells = 100px per cell
         this.players = ['Green', 'Red'];
-        this.positions = [0, 0];
+        this.positions = [1, 1]; // Start from position 1
         this.currentPlayer = 0;
         this.diceValues = [1, 1];
         this.isRolling = false;
@@ -77,8 +77,10 @@ class SnakeAndLaddersGame {
                 // Draw cell with random light color
                 if (this.specialTiles.includes(number)) {
                     this.ctx.fillStyle = '#e3f2fd';
-                } else if (number === 0) {
+                } else if (number === 1) {
                     this.ctx.fillStyle = '#ffeb3b';
+                } else if (number === 100) {
+                    this.ctx.fillStyle = '#ffd700';
                 } else {
                     const colorIndex = (row * 10 + col) % this.tileColors.length;
                     this.ctx.fillStyle = this.tileColors[colorIndex];
@@ -91,14 +93,38 @@ class SnakeAndLaddersGame {
                 this.ctx.fillStyle = '#444444';
                 this.ctx.font = 'bold 28px "Arial Rounded MT Bold", Arial, sans-serif';
                 this.ctx.textAlign = 'center';
-                this.ctx.fillText(number === 0 ? 'START' : number, 
-                    x + this.cellSize/2, y + this.cellSize/2);
+                this.ctx.fillText(number, x + this.cellSize/2, y + this.cellSize/2);
 
                 // Draw special tile indicator
                 if (this.specialTiles.includes(number)) {
                     this.ctx.fillStyle = '#2196f3';
                     this.ctx.font = 'bold 24px Arial';
                     this.ctx.fillText('★', x + this.cellSize/2, y + this.cellSize/2 + 20);
+                }
+
+                // Draw start line and text
+                if (number === 1) {
+                    // Draw start line
+                    this.ctx.strokeStyle = '#000';
+                    this.ctx.lineWidth = 3;
+                    this.ctx.setLineDash([5, 5]);
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(x + 10, y + this.cellSize - 10);
+                    this.ctx.lineTo(x + this.cellSize - 10, y + this.cellSize - 10);
+                    this.ctx.stroke();
+                    this.ctx.setLineDash([]);
+
+                    // Draw "START" text
+                    this.ctx.fillStyle = '#000';
+                    this.ctx.font = 'bold 16px Arial';
+                    this.ctx.fillText('START', x + this.cellSize/2, y + this.cellSize/2 + 20);
+                }
+
+                // Draw trophy on 100
+                if (number === 100) {
+                    this.ctx.fillStyle = '#ffd700';
+                    this.ctx.font = 'bold 24px Arial';
+                    this.ctx.fillText('🏆', x + this.cellSize/2, y + this.cellSize/2 + 20);
                 }
             }
         }
@@ -355,24 +381,19 @@ class SnakeAndLaddersGame {
 
     getBoardNumber(row, col) {
         // Calculate the number based on the row and column
-        // Starting from bottom-left (100) to top-right (1)
-        const baseNumber = 100 - (row * 10);
-        if (row % 2 === 0) {
-            // Even rows go right to left
-            return baseNumber - (9 - col);
-        } else {
-            // Odd rows go left to right
-            return baseNumber - col;
-        }
+        // Starting from bottom-right (1) to top-left (100)
+        // We flip the row number since we want to start from bottom
+        const flippedRow = 9 - row;  // Since we have 10 rows (0-9)
+        return flippedRow * 10 + col + 1;
     }
 
     getCoordinates(position) {
-        // Convert position to row and column
-        const row = Math.floor((100 - position) / 10);
-        const col = position % 10;
+        // Convert position to row and column (0-based)
+        const row = 9 - Math.floor((position - 1) / 10); // Flip the row to start from bottom
+        const col = (position - 1) % 10;
         
         // Calculate x and y coordinates
-        const x = (row % 2 === 0) ? (9 - col) * this.cellSize : col * this.cellSize;
+        const x = col * this.cellSize;
         const y = row * this.cellSize;
         
         return {
@@ -385,12 +406,25 @@ class SnakeAndLaddersGame {
         const result = {};
         const usedPositions = new Set();
         
+        // Add position 1 to used positions to prevent snakes/ladders from touching it
+        usedPositions.add(1);
+        
         while (Object.keys(result).length < count) {
             const start = Math.floor(Math.random() * (startMax - startMin + 1)) + startMin;
             const end = Math.floor(Math.random() * (endMax - endMin + 1)) + endMin;
             
-            // Check if position is already used by snakes or ladders
-            if (!usedPositions.has(start) && !usedPositions.has(end) && start !== end) {
+            // Calculate if the route is straight (same row or same column)
+            const startRow = Math.floor((100 - start) / 10);
+            const startCol = start % 10;
+            const endRow = Math.floor((100 - end) / 10);
+            const endCol = end % 10;
+            const isStraightRoute = startRow === endRow || startCol === endCol;
+            
+            // Check if position is already used by snakes or ladders and not touching position 1
+            if (!usedPositions.has(start) && !usedPositions.has(end) && start !== end && 
+                start !== 1 && end !== 1 && // Prevent touching position 1
+                Math.abs(start - end) > 1 && // Prevent very short snakes/ladders
+                !isStraightRoute) { // Prevent straight routes
                 result[start] = end;
                 usedPositions.add(start);
                 usedPositions.add(end);
@@ -579,13 +613,36 @@ class SnakeAndLaddersGame {
 
         document.getElementById('randomizeButton').addEventListener('click', () => {
             // Reset player positions when randomizing
-            this.positions = [0, 0];
+            this.positions = [1, 1]; // Start from position 1
             this.currentPlayer = 0;
             document.getElementById('playerTurn').textContent = 
                 `Player ${this.currentPlayer + 1}'s turn (${this.players[this.currentPlayer]})`;
             
-            this.snakes = this.randomizeSnakesAndLadders(3, 20, 99, 1, 19);
-            this.ladders = this.randomizeSnakesAndLadders(3, 1, 19, 20, 99);
+            // Randomize snakes and ladders with restrictions
+            this.snakes = this.randomizeSnakesAndLadders(3, 20, 99, 2, 19); // Start from 2 to avoid position 1
+            this.ladders = this.randomizeSnakesAndLadders(3, 2, 19, 20, 99); // Start from 2 to avoid position 1
+            this.drawBoard();
+        });
+
+        document.getElementById('resetButton').addEventListener('click', () => {
+            // Reset player positions
+            this.positions = [1, 1];
+            this.currentPlayer = 0;
+            
+            // Reset scores
+            document.getElementById('score1').textContent = '0';
+            document.getElementById('score2').textContent = '0';
+            
+            // Reset turn display
+            document.getElementById('playerTurn').textContent = 
+                `Player ${this.currentPlayer + 1}'s turn (${this.players[this.currentPlayer]})`;
+            
+            // Reset dice display
+            document.getElementById('dice1').textContent = '⚀';
+            document.getElementById('dice2').textContent = '⚀';
+            document.getElementById('diceResult').textContent = 'Dice: 0';
+            
+            // Redraw the board
             this.drawBoard();
         });
 
