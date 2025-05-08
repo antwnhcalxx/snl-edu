@@ -1,5 +1,8 @@
 # 🎓 snl-edu - Snakes & Ladders for Education
 
+**🔗 Game Link / Σύνδεσμος Παιχνιδιού:**  
+[https://antwnhcalxx.github.io/snl-edu/](https://antwnhcalxx.github.io/snl-edu/)
+
 A bilingual educational twist on the classic Snakes & Ladders game!  
 **Now with question tiles** designed for interactive learning and political education.
 
